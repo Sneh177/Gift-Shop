@@ -15,9 +15,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={dmSans.className}>
         <Header />
-
         {children}
-
         <footer style={{ padding: 16, borderTop: "1px solid #222", marginTop: 24 }}>
           © Arty4Gems
         </footer>

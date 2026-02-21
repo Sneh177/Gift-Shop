@@ -12,6 +12,7 @@ type Product = {
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import type { ChangeEvent } from "react";
 
 export default function AdminPage() {
 
@@ -62,12 +63,12 @@ async function fetchProducts() {
   setOutStock(outStockCount);
 }
 
-  function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  }
+function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  setForm({
+    ...form,
+    [e.target.name]: e.target.value,
+  });
+}
 
   function openAddPopup() {
     setIsEditing(false);

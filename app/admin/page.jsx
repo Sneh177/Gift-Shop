@@ -1,11 +1,21 @@
+
+
 "use client";
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  image_url: string;
+  Stock: boolean;
+};
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminPage() {
 
-  const [products, setProducts] = useState([]);
+const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [inStock, setInStock] = useState(0);
   const [outStock, setOutStock] = useState(0);
@@ -28,27 +38,29 @@ export default function AdminPage() {
     fetchProducts();
   }, []);
 
-  async function fetchProducts() {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*");
+async function fetchProducts() {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*");
 
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setProducts(data);
-
-    setTotalProducts(data.length);
-
-    const inStockCount = data.filter(p => p.Stock === true).length;
-    // Count as out of stock if it's explicitly false or null/undefined
-    const outStockCount = data.filter(p => p.Stock !== true).length;
-
-    setInStock(inStockCount);
-    setOutStock(outStockCount);
+  if (error) {
+    console.error(error);
+    return;
   }
+
+  if (!data) return;
+
+  const typedData = data as Product[];
+
+  setProducts(typedData);
+  setTotalProducts(typedData.length);
+
+  const inStockCount = typedData.filter(p => p.Stock === true).length;
+  const outStockCount = typedData.filter(p => p.Stock !== true).length;
+
+  setInStock(inStockCount);
+  setOutStock(outStockCount);
+}
 
   function handleChange(e) {
     setForm({

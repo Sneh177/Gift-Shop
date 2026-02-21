@@ -1,11 +1,16 @@
 
 
 "use client";
-
 type Product = {
   id: number;
   name: string;
   price: number;
+  image_url: string;
+  Stock: boolean;
+};
+type ProductForm = {
+  name: string;
+  price: string;
   image_url: string;
   Stock: boolean;
 };
@@ -25,15 +30,15 @@ const [products, setProducts] = useState<Product[]>([]);
 
   const [showPopup, setShowPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
+ const [editId, setEditId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    image_url: "",
-    Stock: true
-  });
+const [form, setForm] = useState<ProductForm>({
+  name: "",
+  price: "",
+  image_url: "",
+  Stock: true,
+});
 
   useEffect(() => {
     fetchProducts();
@@ -51,19 +56,17 @@ async function fetchProducts() {
 
   if (!data) return;
 
-  const typedData = data as Product[];
+  setProducts(data as Product[]);
+  setTotalProducts(data.length);
 
-  setProducts(typedData);
-  setTotalProducts(typedData.length);
-
-  const inStockCount = typedData.filter(p => p.Stock === true).length;
-  const outStockCount = typedData.filter(p => p.Stock !== true).length;
+  const inStockCount = data.filter(p => p.Stock === true).length;
+  const outStockCount = data.filter(p => p.Stock !== true).length;
 
   setInStock(inStockCount);
   setOutStock(outStockCount);
 }
 
-function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+function handleChange(e: ChangeEvent<HTMLInputElement>) {
   setForm({
     ...form,
     [e.target.name]: e.target.value,
@@ -82,15 +85,15 @@ function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setShowPopup(true);
   }
 
-  function openEditPopup(product) {
+  function openEditPopup(product: Product) {
     setIsEditing(true);
     setEditId(product.id);
-    setForm({
-      name: product.name || "",
-      price: product.price || "",
-      image_url: product.image_url || "",
-      Stock: product.Stock !== undefined ? product.Stock : true
-    });
+  setForm({
+  name: product.name || "",
+  price: String(product.price),
+  image_url: product.image_url || "",
+  Stock: product.Stock ?? true
+});
     setShowPopup(true);
   }
 
@@ -106,7 +109,7 @@ function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     });
   }
 
-  async function handleDeleteProduct(id) {
+  async function handleDeleteProduct(id: number) {
     const isConfirmed = window.confirm("Are you sure you want to delete this product?");
     if (!isConfirmed) return;
 
@@ -118,7 +121,7 @@ function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     }
   }
 
-  async function handleStatusChange(id, newStatusBool) {
+async function handleStatusChange(id: number, newStatusBool: boolean) {
     const { error } = await supabase
       .from("products")
       .update({ Stock: newStatusBool })
@@ -132,14 +135,16 @@ function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
   }
 
   async function handleSaveProduct() {
-    if (isEditing) {
-      const { error } = await supabase.from("products").update({
-        name: form.name,
-        price: form.price,
-        image_url: form.image_url,
-        Stock: form.Stock
-      }).eq("id", editId);
-
+    if (isEditing && editId !== null) {
+  const { error } = await supabase
+    .from("products")
+    .update({
+      name: form.name,
+      price: Number(form.price),
+      image_url: form.image_url,
+      Stock: form.Stock,
+    })
+    .eq("id", editId);
       if (error) {
         alert(error.message);
       } else {
@@ -149,7 +154,7 @@ function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     } else {
       const { error } = await supabase.from("products").insert([{
         name: form.name,
-        price: form.price,
+     price: Number(form.price),
         image_url: form.image_url,
         Stock: form.Stock
       }]);

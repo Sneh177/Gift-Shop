@@ -2,10 +2,15 @@ import "./globals.css";
 import Link from "next/link";
 import { DM_Sans } from "next/font/google";
 import Header from "@/components/Header";
+import type { ReactNode } from "react";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <html lang="en">
       <body className={dmSans.className}>

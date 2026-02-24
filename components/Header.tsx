@@ -1,73 +1,53 @@
-
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import "../app/globals.css";
+
 export default function Header() {
-
-  const [isOpen, setIsOpen] = useState(false);
-
-  function togglePanel() {
-    setIsOpen(!isOpen);
-  }
-
   return (
-    <>
-      <header className="afg-header">
-        <nav className="afg-navbar">
+    <header className="header">
+      <nav className="nav">
 
-          <Link href="/" style={{ display: 'flex', gap: '12px', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-            <div className="afg-brand-icon">⚡</div>
-            <div className="afg-brand-title">E-Jump</div>
-          </Link>
+        {/* Logo */}
+        <Link href="/" className="logo">
+          <span className="material-symbols-outlined">hub</span>
+          <span>E-Jump</span>
+        </Link>
 
-          <ul className="afg-nav-list">
-            <li className="afg-nav-item">
-              <Link href="/" className="afg-nav-link">Home</Link>
-            </li>
-
-            <li className="afg-nav-item">
-              <Link href="/admin" className="afg-nav-link">Admin</Link>
-            </li>
-
-            <li className="afg-nav-item">
-              <a href="#" className="afg-nav-link">Store</a>
-              <div className="afg-dropdown">
-                <a href="#">New Arrivals</a>
-                <a href="#">Best Sellers</a>
-                <a href="#">Accessories</a>
-              </div>
-            </li>
-
-            <li className="afg-nav-item">
-              <a href="#" className="afg-nav-link">About us</a>
-            </li>
-
-            <li className="afg-nav-item">
-              <a href="#" className="afg-nav-link">Blog</a>
-            </li>
-          </ul>
-
-          <div className="afg-right">
-            <button className="afg-icon-btn">♡</button>
-            <button className="afg-icon-btn">👜</button>
-            <button className="afg-cta-btn">Contact us</button>
-            <span className="afg-hamburger" onClick={togglePanel}>☰</span>
+        {/* Search */}
+        <div className="search-wrapper">
+          <div className="search-box">
+            <input type="text" placeholder="Search products..." />
+            <button className="search-btn">
+              <span className="material-symbols-outlined">search</span>
+            </button>
           </div>
+        </div>
 
-        </nav>
-      </header>
+        {/* Right Actions */}
+        <div className="actions">
+          <button className="icon-btn">
+            <span className="material-symbols-outlined fill-icon favorite">
+              favorite
+            </span>
+          </button>
 
-      <div className={`afg-mobile-panel ${isOpen ? "active" : ""}`}>
-        <Link href="/">Home</Link>
-        <Link href="/admin">Admin</Link>
-        <a href="#">Store</a>
-        <a href="#">About us</a>
-        <a href="#">Blog</a>
-        <button className="afg-cta-btn">Contact us</button>
-      </div>
-    </>
+          <button className="icon-btn">
+            <span className="material-symbols-outlined fill-icon bag">
+              shopping_bag
+            </span>
+          </button>
+
+          <div className="profile">
+            <span>User</span>
+            <img
+              src="https://i.pravatar.cc/100"
+              alt="User Avatar"
+            />
+          </div>
+        </div>
+
+      </nav>
+    </header>
   );
 }
-

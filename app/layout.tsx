@@ -1,5 +1,4 @@
 import "./globals.css";
-import Link from "next/link";
 import { DM_Sans } from "next/font/google";
 import Header from "@/components/Header";
 import type { ReactNode } from "react";
@@ -13,10 +12,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+          rel="stylesheet"
+        />
+      </head>
       <body className={dmSans.className}>
         <Header />
         {children}
-        <footer style={{ padding: 16, borderTop: "1px solid #222", marginTop: 24 }}>
+        <footer
+          style={{
+            padding: 16,
+            borderTop: "1px solid #222",
+            marginTop: 24,
+          }}
+        >
           © Arty4Gems
         </footer>
       </body>

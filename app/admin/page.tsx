@@ -1,18 +1,31 @@
-
-
 "use client";
+const staticCategories = [
+  { id: 1, name: "Birthdays" },
+  { id: 2, name: "Anniversary" },
+  { id: 3, name: "Wedding" },
+];
+
 type Product = {
   id: number;
   name: string;
   price: number;
   image_url: string;
   Stock: boolean;
+  category_id: number | null;
+  description?: string; // 👈 add this
 };
+
 type ProductForm = {
   name: string;
   price: string;
   image_url: string;
   Stock: boolean;
+  category_id: number | ""; // 👈 add this
+};
+
+type Category = {
+  id: number;
+  name: string;
 };
 
 import { useEffect, useState } from "react";
@@ -20,58 +33,69 @@ import { supabase } from "@/lib/supabaseClient";
 import type { ChangeEvent } from "react";
 
 export default function AdminPage() {
-
-const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [inStock, setInStock] = useState(0);
   const [outStock, setOutStock] = useState(0);
-
   const [activeSection, setActiveSection] = useState("dashboard");
 
   const [showPopup, setShowPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
- const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-const [form, setForm] = useState<ProductForm>({
-  name: "",
-  price: "",
-  image_url: "",
-  Stock: true,
-});
+  const [categories, setCategories] = useState<Category[]>(staticCategories); // Use staticCategories initially
+
+  const [form, setForm] = useState<ProductForm>({
+    name: "",
+    price: "",
+    image_url: "",
+    Stock: true,
+    category_id: "", // default empty
+  });
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories(); // Fetch categories from supabase
   }, []);
 
-async function fetchProducts() {
-  const { data, error } = await supabase
-    .from("products")
-    .select("*");
+  async function fetchProducts() {
+    const { data, error } = await supabase.from("products").select("*");
 
-  if (error) {
-    console.error(error);
-    return;
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (!data) return;
+
+    setProducts(data as Product[]);
+    setTotalProducts(data.length);
+
+    const inStockCount = data.filter(p => p.Stock === true).length;
+    const outStockCount = data.filter(p => p.Stock !== true).length;
+
+    setInStock(inStockCount);
+    setOutStock(outStockCount);
   }
 
-  if (!data) return;
+  async function fetchCategories() {
+    const { data, error } = await supabase.from("categories").select("*");
 
-  setProducts(data as Product[]);
-  setTotalProducts(data.length);
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  const inStockCount = data.filter(p => p.Stock === true).length;
-  const outStockCount = data.filter(p => p.Stock !== true).length;
+    setCategories(data || []); // Update categories with fetched data from Supabase
+  }
 
-  setInStock(inStockCount);
-  setOutStock(outStockCount);
-}
-
-function handleChange(e: ChangeEvent<HTMLInputElement>) {
-  setForm({
-    ...form,
-    [e.target.name]: e.target.value,
-  });
-}
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  }
 
   function openAddPopup() {
     setIsEditing(false);
@@ -80,7 +104,8 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
       name: "",
       price: "",
       image_url: "",
-      Stock: true
+      Stock: true,
+      category_id: "", // Reset category_id on adding new product
     });
     setShowPopup(true);
   }
@@ -88,12 +113,13 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
   function openEditPopup(product: Product) {
     setIsEditing(true);
     setEditId(product.id);
-  setForm({
-  name: product.name || "",
-  price: String(product.price),
-  image_url: product.image_url || "",
-  Stock: product.Stock ?? true
-});
+    setForm({
+      name: product.name,
+      price: String(product.price),
+      image_url: product.image_url,
+      Stock: product.Stock,
+      category_id: product.category_id ?? "", // Ensure category_id is set correctly
+    });
     setShowPopup(true);
   }
 
@@ -105,7 +131,8 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
       name: "",
       price: "",
       image_url: "",
-      Stock: true
+      Stock: true,
+      category_id: "", // Reset category_id
     });
   }
 
@@ -121,7 +148,7 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
     }
   }
 
-async function handleStatusChange(id: number, newStatusBool: boolean) {
+  async function handleStatusChange(id: number, newStatusBool: boolean) {
     const { error } = await supabase
       .from("products")
       .update({ Stock: newStatusBool })
@@ -136,15 +163,16 @@ async function handleStatusChange(id: number, newStatusBool: boolean) {
 
   async function handleSaveProduct() {
     if (isEditing && editId !== null) {
-  const { error } = await supabase
-    .from("products")
-    .update({
-      name: form.name,
-      price: Number(form.price),
-      image_url: form.image_url,
-      Stock: form.Stock,
-    })
-    .eq("id", editId);
+      const { error } = await supabase
+        .from("products")
+        .update({
+          name: form.name,
+          price: Number(form.price),
+          image_url: form.image_url,
+          Stock: form.Stock,
+          category_id: form.category_id, // Update category ID
+        })
+        .eq("id", editId);
       if (error) {
         alert(error.message);
       } else {
@@ -152,12 +180,15 @@ async function handleStatusChange(id: number, newStatusBool: boolean) {
         fetchProducts();
       }
     } else {
-      const { error } = await supabase.from("products").insert([{
-        name: form.name,
-     price: Number(form.price),
-        image_url: form.image_url,
-        Stock: form.Stock
-      }]);
+      const { error } = await supabase.from("products").insert([
+        {
+          name: form.name,
+          price: Number(form.price),
+          image_url: form.image_url,
+          Stock: form.Stock,
+          category_id: form.category_id === "" ? null : form.category_id, // Handle category ID
+        },
+      ]);
 
       if (error) {
         alert(error.message);
@@ -188,273 +219,147 @@ async function handleStatusChange(id: number, newStatusBool: boolean) {
           </div>
 
           <nav className="apx-nav">
-
-            <a
-              href="#"
-              className={activeSection === "dashboard" ? "active" : ""}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveSection("dashboard");
-              }}
-              style={{ display: "flex", alignItems: "center", gap: "10px" }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-              </svg>
+            <a href="#" className={activeSection === "dashboard" ? "active" : ""} onClick={(e) => { e.preventDefault(); setActiveSection("dashboard"); }}>
               Dashboard
             </a>
 
-            <a
-              href="#"
-              className={activeSection === "products" ? "active" : ""}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveSection("products");
-              }}
-              style={{ display: "flex", alignItems: "center", gap: "10px" }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <path d="M16 10a4 4 0 0 1-8 0"></path>
-              </svg>
+            <a href="#" className={activeSection === "products" ? "active" : ""} onClick={(e) => { e.preventDefault(); setActiveSection("products"); }}>
               Products
             </a>
-
           </nav>
-
         </aside>
 
         {/* MAIN */}
         <main className="apx-main">
-
-          {/* DASHBOARD */}
-          {activeSection === "dashboard" && (
-
-            <div>
-
-              <h1>Dashboard</h1>
-
-              <div className="apx-grid">
-
-                <div className="apx-card">
-                  <div className="apx-icon-box" style={{ background: "rgba(123, 0, 255, 0.1)", color: "#7b00ff" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-grid">
-                      <rect x="3" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="3" width="7" height="7"></rect>
-                      <rect x="3" y="14" width="7" height="7"></rect>
-                      <rect x="14" y="14" width="7" height="7"></rect>
-                    </svg>
-                  </div>
-                  <div className="apx-label">Total Products</div>
-                  <div className="apx-value">{totalProducts}</div>
-                </div>
-
-                <div className="apx-card">
-                  <div className="apx-icon-box" style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 13l5 5L20 7"></path>
-                    </svg>
-                  </div>
-                  <div className="apx-label">In Stock</div>
-                  <div className="apx-value">{inStock}</div>
-                </div>
-
-                <div className="apx-card">
-                  <div className="apx-icon-box" style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="5" x2="19" y2="19"></line>
-                      <line x1="19" y1="5" x2="5" y2="19"></line>
-                    </svg>
-                  </div>
-                  <div className="apx-label">Out Of Stock</div>
-                  <div className="apx-value">{outStock}</div>
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-          {/* PRODUCTS */}
           {activeSection === "products" && (
-
             <div>
-
               <div className="apx-header-row">
                 <h2>Products</h2>
-
-                <button
-                  className="apx-add-btn"
-                  onClick={openAddPopup}
-                >
+                <button className="apx-add-btn" onClick={openAddPopup}>
                   + Add Product
                 </button>
               </div>
 
               <div className="apx-search-box">
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-
-                  <input
-                    type="text"
-                    placeholder="Search products by name..."
-                    style={{ paddingLeft: "40px" }}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Search products by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
 
-              <div className="apx-table-wrapper">
+              <div className="products">
+                {products
+                  .filter((product) =>
+                    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((product) => {
+                    const categoryName =
+                      categories.find((cat) => cat.id === product.category_id)?.name || "None";
 
-                <table className="apx-table">
+                    return (
+                      <div key={product.id} className="card">
+                        <div className="card-image">
+                          <img src={product.image_url} alt={product.name} />
+                          <button className="favorite-btn" aria-label="Add to Favorites">
+                            <svg viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+                            </svg>
+                          </button>
+                        </div>
 
-                  <thead>
-                    <tr>
-                      <th>Image</th>
-                      <th>Name</th>
-                      <th>Price</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: "right" }}>Actions</th>
-                    </tr>
-                  </thead>
+                        <div className="card-content">
+                          <h3>{product.name}</h3>
+                          <p>{product.description}</p>
+                          <span><strong>Category</strong>: {categoryName}</span>
+                          <span><strong>Status</strong>: {product.Stock ? "In Stock" : "Out of Stock"}</span>
 
-                  <tbody>
-
-                    {products
-                      .filter(product =>
-                        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
-                      .map((product) => (
-
-                        <tr key={product.id}>
-
-                          <td>
-                            <img
-                              src={product.image_url}
-                              className="apx-product-img"
-                              alt="product"
-                            />
-                          </td>
-
-                          <td>{product.name}</td>
-
-                          <td>₹{product.price}</td>
-
-                          <td>
-                            {product.Stock ? (
-                              <span className="apx-status apx-in">In Stock</span>
-                            ) : (
-                              <span className="apx-status apx-out">Out of Stock</span>
-                            )}
-                          </td>
-
-                          <td style={{ textAlign: "right" }}>
-                            <div className="apx-actions" style={{ justifyContent: "flex-end" }}>
-                              <button
-                                className="apx-icon-btn apx-edit-btn"
-                                title="Edit"
-                                onClick={() => openEditPopup(product)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M12 20h9"></path>
-                                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                </svg>
-                              </button>
-                              <button
-                                className="apx-icon-btn apx-delete-btn"
-                                title="Delete"
-                                onClick={() => handleDeleteProduct(product.id)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6"></polyline>
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                                  <line x1="14" y1="11" x2="14" y2="17"></line>
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-
-                        </tr>
-
-                      ))}
-
-                  </tbody>
-
-                </table>
-
+                          <div className="card-footer">
+                            <div className="price">${product.price}</div>
+                            <button
+                              className="admin-action-btn admin-edit-btn"
+                              data-tooltip="Edit Product"
+                              aria-label="Edit"
+                              onClick={() => openEditPopup(product)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="admin-action-btn admin-delete-btn"
+                              data-tooltip="Delete Product"
+                              aria-label="Delete"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
-
-              {/* POPUP */}
-              {showPopup && (
-
-                <div className="apx-popup-overlay">
-
-                  <div className="apx-popup">
-
-                    <h3>{isEditing ? "Edit Product" : "Add Product"}</h3>
-
-                    <input
-                      name="name"
-                      placeholder="Product Name"
-                      value={form.name}
-                      onChange={handleChange}
-                    />
-
-                    <input
-                      name="price"
-                      placeholder="Price"
-                      value={form.price}
-                      onChange={handleChange}
-                    />
-
-                    <input
-                      name="image_url"
-                      placeholder="Image URL"
-                      value={form.image_url}
-                      onChange={handleChange}
-                    />
-
-                    <select
-                      name="Stock"
-                      value={form.Stock ? "true" : "false"}
-                      onChange={(e) => setForm({ ...form, Stock: e.target.value === "true" })}
-                    >
-                      <option value="true">In Stock</option>
-                      <option value="false">Out of Stock</option>
-                    </select>
-
-                    <div className="apx-popup-buttons">
-
-                      <button className="apx-popup-btn-cancel" onClick={closePopup}>
-                        Cancel
-                      </button>
-
-                      <button className="apx-popup-btn-save" onClick={handleSaveProduct}>
-                        Save
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              )}
-
             </div>
-
           )}
 
+          {/* POPUP */}
+          {showPopup && (
+            <div className="apx-popup-overlay">
+              <div className="apx-popup">
+                <h3>{isEditing ? "Edit Product" : "Add Product"}</h3>
+
+                <input
+                  name="name"
+                  placeholder="Product Name"
+                  value={form.name}
+                  onChange={handleChange}
+                />
+
+                <input
+                  name="price"
+                  placeholder="Price"
+                  value={form.price}
+                  onChange={handleChange}
+                />
+
+                <input
+                  name="image_url"
+                  placeholder="Image URL"
+                  value={form.image_url}
+                  onChange={handleChange}
+                />
+
+                <select
+                  name="category_id"
+                  value={form.category_id}
+                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  name="Stock"
+                  value={form.Stock ? "true" : "false"}
+                  onChange={(e) => setForm({ ...form, Stock: e.target.value === "true" })}
+                >
+                  <option value="true">In Stock</option>
+                  <option value="false">Out of Stock</option>
+                </select>
+
+                <div className="apx-popup-buttons">
+                  <button onClick={closePopup}>Cancel</button>
+                  <button onClick={handleSaveProduct}>Save</button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
-
       </div>
-
     </div>
   );
-} 
+}

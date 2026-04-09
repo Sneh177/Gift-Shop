@@ -1,9 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import "../app/globals.css";
 
 export default function Header() {
+  const [favCount, setFavCount] = useState(0);
+
+  useEffect(() => {
+    const fetchFavs = () => {
+      const stored = localStorage.getItem("favorites");
+      if (stored) {
+        try {
+          const arr = JSON.parse(stored);
+          setFavCount(arr.length);
+        } catch (e) {}
+      } else {
+        setFavCount(0);
+      }
+    };
+    
+    fetchFavs();
+
+    // Custom event broadcasted locally + storage event broadcasted by other tabs
+    window.addEventListener("favoritesUpdated", fetchFavs);
+    window.addEventListener("storage", fetchFavs);
+
+    return () => {
+      window.removeEventListener("favoritesUpdated", fetchFavs);
+      window.removeEventListener("storage", fetchFavs);
+    };
+  }, []);
+
   return (
     <header className="header">
       <nav className="nav">
@@ -26,11 +54,14 @@ export default function Header() {
 
         {/* Right Actions */}
         <div className="actions">
-          <button className="icon-btn">
+          <Link href="/favorites" className="icon-btn icon-btn-relative" style={{ textDecoration: 'none' }}>
             <span className="material-symbols-outlined fill-icon favorite">
               favorite
             </span>
-          </button>
+            {favCount > 0 && (
+              <span className="fav-badge">{favCount}</span>
+            )}
+          </Link>
 
           <button className="icon-btn">
             <span className="material-symbols-outlined fill-icon bag">

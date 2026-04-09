@@ -63,7 +63,7 @@ export default function AdminPage() {
     const { data, error } = await supabase.from("products").select("*");
 
     if (error) {
-      console.error(error);
+      console.warn("Error fetching products:", error);
       return;
     }
 
@@ -83,7 +83,7 @@ export default function AdminPage() {
     const { data, error } = await supabase.from("categories").select("*");
 
     if (error) {
-      console.error(error);
+      console.warn("Error fetching categories:", error);
       return;
     }
 
@@ -332,7 +332,7 @@ export default function AdminPage() {
                 <select
                   name="category_id"
                   value={form.category_id}
-                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                  onChange={(e) => setForm({ ...form, category_id: e.target.value === "" ? "" : Number(e.target.value) })}
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (

@@ -372,7 +372,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="lp-contact-row">
-                <div className="lp-contact-icon"><Icons.PhoneSVG /></div>
+                <div className="lp-contact-icon"></div>
                 <div>
                   <h4>Call Us</h4>
                   <p>+1 (555) 123-4567</p>
@@ -380,10 +380,10 @@ export default function Home() {
               </div>
             </div>
             <div className="lp-socials">
-              <a aria-label="Instagram" href="#" className="lp-social-btn"><Icons.InstagramSVG /></a>
-              <a aria-label="Twitter" href="#" className="lp-social-btn"><Icons.TwitterSVG /></a>
-              <a aria-label="LinkedIn" href="#" className="lp-social-btn"><Icons.LinkedInSVG /></a>
-              <a aria-label="Github" href="#" className="lp-social-btn"><Icons.GithubSVG /></a>
+              <a aria-label="Instagram" href="#" className="lp-social-btn"></a>
+              <a aria-label="Twitter" href="#" className="lp-social-btn"></a>
+              <a aria-label="LinkedIn" href="#" className="lp-social-btn"></a>
+              <a aria-label="Github" href="#" className="lp-social-btn"></a>
             </div>
           </div>
           <div className="lp-contact-right">
@@ -424,10 +424,10 @@ export default function Home() {
             </a>
             <p>We create beautiful, functional designs that help businesses grow and connect with their audience.</p>
             <div className="lp-footer-socials">
-              <a aria-label="Instagram" href="#" className="lp-footer-social"><Icons.InstagramSVG /></a>
-              <a aria-label="Twitter" href="#" className="lp-footer-social"><Icons.TwitterSVG /></a>
-              <a aria-label="LinkedIn" href="#" className="lp-footer-social"><Icons.LinkedInSVG /></a>
-              <a aria-label="Github" href="#" className="lp-footer-social"><Icons.GithubSVG /></a>
+              <a aria-label="Instagram" href="#" className="lp-footer-social"></a>
+              <a aria-label="Twitter" href="#" className="lp-footer-social"></a>
+              <a aria-label="LinkedIn" href="#" className="lp-footer-social"></a>
+              <a aria-label="Github" href="#" className="lp-footer-social"></a>
             </div>
           </div>
           <div className="lp-footer-col">
